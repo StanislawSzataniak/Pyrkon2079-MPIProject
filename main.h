@@ -5,9 +5,18 @@
 #include <stdlib.h>
 #include <stdio.h> 
 #include <pthread.h>
+#include <stdbool.h>
 #include <semaphore.h>
 #include <unistd.h>
 #include <string.h>
+#include <stddef.h>
+
+typedef struct {
+    bool want;              /* czy proces ubiega się o bilet */
+    bool has;               /* czy proces ma już bilet */
+    int confs;              /* liczba zgód na zajęcie biletu */
+    int number;             /* liczba dostępnych biletów na pyrkon */
+} ticket;
 
 typedef struct {
     int ts;                 /* zegar lamporta */
@@ -19,6 +28,13 @@ typedef struct {
     int src;                /* pole ustawiane w wątku komunikacyjnym na processId nadawcy */
 } packet_t;
 #define FIELDNO 7  //liczba pól w strukturze packet_t
+
+
+typedef struct {
+    packet_t *pakiet;
+    int type;
+    int dst;
+} stackEl_t;
 
 #define PYRKON_START 1
 #define PYRKON_TICKET 2

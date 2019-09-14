@@ -14,6 +14,10 @@ void sendPacket(packet_t *data, int dst, int type) {
     MPI_Send(data, 1, MPI_PACKET_T, dst, type, MPI_COMM_WORLD);
 }
 
+void pyrkonTicketsHandler(packet_t *pakiet) {
+    ticket. = pakiet->ticketsNumber;
+    println("           PYRKON TICKETS: %d", pyrkonTicket.amount);
+}
 
 
 
