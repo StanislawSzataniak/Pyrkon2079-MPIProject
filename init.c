@@ -42,7 +42,11 @@ void initialize(int *argc, char ***argv) {
     sem_init(&pyrkonTicketSem, 0, 0);
     sem_init(&workshopTicketSem, 0, 0);
 
+    //init handlers
     
+
+    // init communication thread
+    pthread_create(&communicationThread, NULL, comFunc, 0);
 }
 
 void finalize(void){

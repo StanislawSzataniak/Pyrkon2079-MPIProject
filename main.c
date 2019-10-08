@@ -20,6 +20,17 @@ void *comFunc(void *ptr) {
     return 0;
 }
 
+void sendPacket(packet_t *data, int dst, int type) {
+
+    pthread_mutex_lock(&timerMutex);
+        data->ts = ++lamportTimer;
+    pthread_mutex_unlock(&timerMutex);
+
+    // data->pyrkonNumber = pyrkonNumber;
+
+    MPI_Send(data, 1, MPI_PACKET_T, dst, type, MPI_COMM_WORLD);
+}
+
 int main(int argc, char *argv[]) {
     return 0;
 }

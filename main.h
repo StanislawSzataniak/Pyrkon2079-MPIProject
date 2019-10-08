@@ -68,6 +68,4 @@ typedef void (*f_w)(packet_t*);
 
 // }
 
-
-
 #endif
