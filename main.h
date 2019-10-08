@@ -23,7 +23,6 @@
 #include<unistd.h>
 #include<string.h>
 #include<semaphore.h>
-#include"vector.h"
 
 extern MPI_Datatype MPI_PACKET_T;
 
@@ -55,7 +54,7 @@ typedef struct {
 void init(Vector *vector);
 void free_memory(Vector *vector);
 void add_sort(Vector* vector, packet_t new_item);
-int size(Vector *vector);
+int vectorSize(Vector *vector);
 int capacity(Vector *vector);
 int my_latest_position_in_queue(Vector *vector, int my_rank);
 

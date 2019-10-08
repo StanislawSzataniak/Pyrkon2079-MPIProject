@@ -2,6 +2,10 @@
 
 int actual_ts = 0;
 ticket pyrkonTicket;
+MPI_Datatype MPI_PACKET_T;
+
+extern void initialize(int *argc, char ***argv);
+extern void finalize(void);
 
 int max(int a, int b) {
     if (a > b) {
@@ -86,7 +90,7 @@ int my_latest_position_in_queue(Vector *vector, int my_rank)
 
 }
 
-int size(Vector *vector)
+int vectorSize(Vector *vector)
 {
     return vector->size;
 }
@@ -115,8 +119,9 @@ void *comFunc(void *ptr) {
 
         pakiet.src = status.MPI_SOURCE;
 
-        if (pakiet.pyrkonNumber == pyrkonNumber)        //protection from receiving messages from previous Pyrkon
-            handlers[(int)status.MPI_TAG](&pakiet);
+        if (pakiet.pyrkonNumber == pyrkonNumber) {        //protection from receiving messages from previous Pyrkon
+            // handlers[(int)status.MPI_TAG](&pakiet);
+	}
     }
     return 0;
 }
@@ -134,21 +139,26 @@ void sendPacket(packet_t *data, int dst, int type) {
 
 void pyrkonTicketRequestHandler(packet_t *packet)
 {
-    int senderId = pakiet->src;
+    int senderId = packet->src;
     //printf("Ja hunter %d otrazymalem licence request od %ld z ts: %ld, prio: %ld a ja mam ts: %d, prio: %d\n",rank,packet->src,packet->ts,packet->prio,my_request_ts_licence,actual_prio);
-    if (pyrkonTicket.want )
+    if (pyrkonTicket.want)
     {
-        if (!pyrkonTicket.has && (pyrkonTicket.requestTS > pakiet->requestTS || (pyrkonTicket.requestTS == pakiet->requestTS && rank > senderId))) {
-            sendPacket(pakiet, senderId, WANT_PYRKON_TICKET_ACK);
+        if (!pyrkonTicket.has && (pyrkonTicket.requestTS > packet->ts || (pyrkonTicket.requestTS == packet->ts && rank > senderId))) {
+            sendPacket(packet, senderId, PYRKON_TICKET_ACK);
+	}
         else {
             // pyrkonTicket.waiting.push_back(senderId);
         }
     }
     else {
-        sendPacket(pakiet, senderId, WANT_PYRKON_TICKET_ACK);
+        sendPacket(packet, senderId, PYRKON_TICKET_ACK);
     }
 }
 
 int main(int argc, char *argv[]) {
+    printf("HALKO");
+    initialize(&argc, &argv);
+    printf("Hello World");
+    finalize();
     return 0;
 }

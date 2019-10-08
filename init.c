@@ -2,8 +2,8 @@
 
 int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber;
 
-int tickets_agreements_array;
-int workshops_agreements_array;
+int *tickets_agreements_array;
+int *workshops_agreements_array;
 
 pthread_mutex_t timerMutex;
 sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
@@ -11,11 +11,13 @@ sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicke
 pthread_t ticketsThread, communicationThread;
 
 void initialize(int *argc, char ***argv) {
+
+    printf("COMM THREAD");
     // initialize MPI
     int provided;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &provided);
     // check_thread_support(provided);
-    MPI_Comm_rank(MPI_COMM_WORLD, &processId);  
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // initialize MPI struct
@@ -46,7 +48,7 @@ void initialize(int *argc, char ***argv) {
 
     //init handlers
     
-
+    printf("COMM THREAD");
     // init communication thread
     pthread_create(&communicationThread, NULL, comFunc, 0);
 }
