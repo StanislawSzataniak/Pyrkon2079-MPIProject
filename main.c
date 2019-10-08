@@ -10,6 +10,97 @@ int max(int a, int b) {
     return b;
 }
 
+void init(Vector *vector)
+{
+    vector->size = 0;
+    vector->capacity = VECTOR_INITIAL_CAPACITY;
+    vector->data = malloc(sizeof(packet_t) * vector->capacity);
+}
+
+void add_sort(Vector* vector, packet_t new_item)
+{
+    if(vector->size + 1 >= vector->capacity)
+    {
+        vector->capacity *= 2;
+        vector->data = realloc(vector->data, sizeof(packet_t) * vector->capacity);
+    }
+
+    for(int i=vector->size;i>=0;i--)
+    {
+        if(vector->data[i-1].ts<new_item.ts||i==0)
+        {
+            if(i==vector->size)
+            {
+                vector->data[vector->size++]=new_item;
+                return;
+            }
+            else
+            {
+                for(int j=vector->size-1;j>=i;j--)
+                {
+                    vector->data[j+1]=vector->data[j];
+                }
+                vector->data[i]=new_item;
+                vector->size++;
+                return;
+            }
+
+        }
+        else if (vector->data[i-1].ts==new_item.ts)
+        {
+            if(vector->data[i-1].src<new_item.src)
+            {
+                if(i==vector->size)
+                {
+                    vector->data[vector->size++]=new_item;
+                    return;
+                }
+                else
+                {
+                    for(int j=vector->size-1;j>=i;j--)
+                    {
+                        vector->data[j+1]=vector->data[j];
+                    }
+                    vector->data[i]=new_item;
+                    vector->size++;
+                    return;
+                }
+                
+            }
+        }
+ 
+    }
+    
+}
+
+int my_latest_position_in_queue(Vector *vector, int my_rank)
+{
+    for(int i=vector->size-1;i>=0;i--)
+    {
+        if(vector->data[i].src==my_rank)
+        {
+            return i+1;
+        }
+    }
+    return -1;
+
+}
+
+int size(Vector *vector)
+{
+    return vector->size;
+}
+
+int capacity(Vector *vector)
+{
+    return vector->capacity;
+}
+
+void free_memory(Vector *vector)
+{
+    free(vector->data);
+}
+
 void *comFunc(void *ptr) {
     MPI_Status status;
     packet_t pakiet;

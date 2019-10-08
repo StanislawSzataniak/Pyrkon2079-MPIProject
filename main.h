@@ -13,6 +13,7 @@
 #define MAX_WORKSHOPS 8
 #define MAX_HANDLERS 10
 #define FINISH 11
+#define VECTOR_INITIAL_CAPACITY 16
 
 #include<mpi.h>
 #include<pthread.h>
@@ -44,6 +45,19 @@ typedef struct {
     int dst;                /* pole ustawiane w sendPacket */
     int src;                /* pole ustawiane w wątku komunikacyjnym na processId nadawcy */
 } packet_t;
+
+typedef struct {
+    int size;
+    int capacity;
+    packet_t *data;
+} Vector;
+
+void init(Vector *vector);
+void free_memory(Vector *vector);
+void add_sort(Vector* vector, packet_t new_item);
+int size(Vector *vector);
+int capacity(Vector *vector);
+int my_latest_position_in_queue(Vector *vector, int my_rank);
 
 extern int rank; //rank
 extern int size;
