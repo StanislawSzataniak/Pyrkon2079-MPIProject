@@ -1,6 +1,6 @@
 #include "main.h"
 
-int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber;
+int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber;
 
 int tickets_agreements_array;
 int workshops_agreements_array;
@@ -24,17 +24,19 @@ void initialize(int *argc, char ***argv) {
     MPI_Aint offsets[FIELDNO];
     offsets[0] = offsetof(packet_t, ts);
     offsets[1] = offsetof(packet_t, ticketsNumber);
-    offsets[2] = offsetof(packet_t, wkspshopsNumber);
-    offsets[3] = offsetof(packet_t, wkspTicketsNumber);
-    offsets[4] = offsetof(packet_t, wkspNumber);
-    offsets[5] = offsetof(packet_t, dst);
-    offsets[6] = offsetof(packet_t, src);                        
+    offsets[2] = offsetof(packet_t, pyrkonNumber);
+    offsets[3] = offsetof(packet_t, wkspshopsNumber);
+    offsets[4] = offsetof(packet_t, wkspTicketsNumber);
+    offsets[5] = offsetof(packet_t, wkspNumber);
+    offsets[6] = offsetof(packet_t, dst);
+    offsets[7] = offsetof(packet_t, src);                        
     MPI_Datatype typy[FIELDNO] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};     /* tu dodać typ nowego pola (np MPI_BYTE, MPI_INT) */
     MPI_Type_create_struct(nitems, blocklengths, offsets, typy, &MPI_PACKET_T);
     MPI_Type_commit(&MPI_PACKET_T);
 
-    // initialize lamportTimer
-    lamportTimer = 0; 
+    // initialize stuff
+    lamportTimer = 0;
+    pyrkonNumber = 0; 
 
     // initialize semaphores
     sem_init(&pyrkonStartSem, 0, 0);

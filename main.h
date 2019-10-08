@@ -31,11 +31,13 @@ typedef struct {
     bool has;               /* czy proces ma już bilet */
     int confs;              /* liczba zgód na zajęcie biletu */
     int number;             /* liczba dostępnych biletów na pyrkon */
+    int requestTS;
 } ticket;
 
 typedef struct {
     int ts;                 /* zegar lamporta */
     int ticketsNumber;      /* liczba biletów na obecny Pyrkon */
+    int pyrkonNumber;       /* numer obecnego Pyrkonu */
     int wkspshopsNumber;    /* liczba warsztatów na obecnym Pyrkonie */
     int wkspTicketsNumber;  /* liczba miejsc na warsztatach */
     int wkspNumber;         /* opcjonalny numer warsztatu na który uczestnik chce zdobyć bilet */
@@ -49,6 +51,8 @@ extern int ticketsNumber;
 extern int wkspNumber;
 extern int wkspTicketsNumber;
 extern int lamportTimer;
+extern int pyrkonNumber;
+
 
 extern int* tickets_agreements_array;
 extern int* workshops_agreements_array;
