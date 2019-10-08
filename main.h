@@ -1,15 +1,30 @@
 #ifndef MAINH
 #define MAINH
 
-#include <mpi.h>
-#include <stdlib.h>
-#include <stdio.h> 
-#include <pthread.h>
+#define FIELDNO 7
+#define PYRKON_START 1
+#define PYRKON_TICKET 2
+#define WORKSHOP_TICKET 3
+#define PYRKON_TICKET_ACK 4
+#define WORKSHOP_TCIKET_ACK 5
+#define PYRKON_ENTER 6
+#define WORKSHOP_ENTER 7
+#define MIN_WORKSHOPS 3
+#define MAX_WORKSHOPS 8
+#define MAX_HANDLERS 10
+#define FINISH 11
+
+#include<mpi.h>
+#include<pthread.h>
+#include<stdio.h>
 #include <stdbool.h>
-#include <semaphore.h>
-#include <unistd.h>
-#include <string.h>
-#include <stddef.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<semaphore.h>
+#include"vector.h"
+
+extern MPI_Datatype MPI_PACKET_T;
 
 typedef struct {
     bool want;              /* czy proces ubiega się o bilet */
@@ -27,34 +42,32 @@ typedef struct {
     int dst;                /* pole ustawiane w sendPacket */
     int src;                /* pole ustawiane w wątku komunikacyjnym na processId nadawcy */
 } packet_t;
-#define FIELDNO 7  //liczba pól w strukturze packet_t
 
+extern int rank; //rank
+extern int size;
+extern int ticketsNumber;
+extern int wkspNumber;
+extern int wkspTicketsNumber;
+extern int lamportTimer;
 
-typedef struct {
-    packet_t *pakiet;
-    int type;
-    int dst;
-} stackEl_t;
-
-#define PYRKON_START 1
-#define PYRKON_TICKET 2
-#define WORKSHOP_TICKET 3
-#define PYRKON_TICKET_ACK 4
-#define WORKSHOP_TCIKET_ACK 5
-#define PYRKON_ENTER 6
-#define WORKSHOP_ENTER 7
-
-extern MPI_Datatype MPI_PACKET_T;
-
-extern int processId, size, ticketsNumber, wkspNumber, wkspTicketsNumber, lamportTimer;
-#define MIN_WORKSHOPS 3
-#define MAX_WORKSHOPS 8
+extern int* tickets_agreements_array;
+extern int* workshops_agreements_array;
 
 extern pthread_mutex_t timerMutex;
 extern sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+//czy zamiana na pthread_cond_t
 extern pthread_t ticketsThread;
 
-extern void * prepareAndSendTicketsDetails(void *);
+extern void *comFunc(void *);
+extern void *prepareAndSendTicketsDetails(void *);
 extern void sendPacket(packet_t *, int, int);
+
+typedef void (*f_w)(packet_t*);
+// TODO
+// f_w handlers[MAX_HANDLERS] = {
+
+// }
+
+
 
 #endif

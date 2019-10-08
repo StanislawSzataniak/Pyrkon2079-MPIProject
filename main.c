@@ -1,35 +1,25 @@
 #include "main.h"
 
-MPI_Datatype MPI_PAKIET_T;
-pthread_mutex_t timerMutex;
+void *comFunc(void *ptr) {
+    MPI_Status status;
+    packet_t pakiet;
 
-void sendPacket(packet_t *data, int dst, int type) {
-//
-//    //pthread_mutex_lock(&timerMutex);
-//    //     data->ts = ++lamportTimer;
-//    //     setrequestTS(data, lamportTimer, type);                     /* jeżeli konieczne, ustaw requestTimer na aktualny lamportTimer - Ricart Agrawala Aglorithm */
-//    //     // println("%s -> %d", getMessageCode(type).c_str(), dst);     /* printowanie w mutexie, żeby zapewnić idealną informację o punktach w czasie */
-//    //pthread_mutex_unlock(&timerMutex);
-//
-    MPI_Send(data, 1, MPI_PACKET_T, dst, type, MPI_COMM_WORLD);
+    while (true) {
+        MPI_Recv(&pakiet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+        pthread_mutex_lock(&timerMutex);
+            lamportTimer = max(lamportTimer, pakiet.ts) + 1;
+            // println("%d -> %s", status.MPI_SOURCE, getMessageCode(status.MPI_TAG).c_str());
+        pthread_mutex_unlock(&timerMutex);
+
+        pakiet.src = status.MPI_SOURCE;
+
+        // if (pakiet.pyrkonNumber == pyrkonNumber)        //protection from receiving messages from previous Pyrkon
+        //     handlers[(int)status.MPI_TAG](&pakiet);
+    }
+    return 0;
 }
-
-void pyrkonTicketsHandler(packet_t *pakiet) {
-    ticket. = pakiet->ticketsNumber;
-    println("           PYRKON TICKETS: %d", pyrkonTicket.amount);
-}
-
-
 
 int main(int argc, char *argv[]) {
-    //initialize(argc, argv);
-    //mainLoop();
-    //finalize();
-    int rank, size;
-    MPI_Init (&argc, &argv);      /* starts MPI */
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);        /* get current process id */
-    MPI_Comm_size (MPI_COMM_WORLD, &size);        /* get number of processes */
-    printf( "Hello world from process %d of %d\n", rank, size );
-    MPI_Finalize();
     return 0;
 }
