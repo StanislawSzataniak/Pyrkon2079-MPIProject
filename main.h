@@ -1,7 +1,7 @@
 #ifndef MAINH
 #define MAINH
 
-#define FIELDNO 7
+#define FIELDNO 8
 #define PYRKON_START 1
 #define PYRKON_TICKET 2
 #define WORKSHOP_TICKET 3
@@ -13,7 +13,12 @@
 #define MAX_WORKSHOPS 8
 #define MAX_HANDLERS 10
 #define FINISH 11
+#define WORKSHOP_END 12
 #define VECTOR_INITIAL_CAPACITY 16
+#define PYRKON_TICKET_NUMBER 10
+
+#define NUMBER_OF_WORKSHOP_TICKETS 2
+#define WORKSHOP_NUMBER 3
 
 #include<mpi.h>
 #include<pthread.h>
@@ -46,17 +51,11 @@ typedef struct {
 } packet_t;
 
 typedef struct {
-    int size;
-    int capacity;
-    packet_t *data;
-} Vector;
+    packet_t *newP;
+    int type;
+    int dst;
+} queueEl_t;
 
-void init(Vector *vector);
-void free_memory(Vector *vector);
-void add_sort(Vector* vector, packet_t new_item);
-int vectorSize(Vector *vector);
-int capacity(Vector *vector);
-int my_latest_position_in_queue(Vector *vector, int my_rank);
 
 extern int rank; //rank
 extern int size;
@@ -66,9 +65,8 @@ extern int wkspTicketsNumber;
 extern int lamportTimer;
 extern int pyrkonNumber;
 
+extern bool end;
 
-extern int* tickets_agreements_array;
-extern int* workshops_agreements_array;
 
 extern pthread_mutex_t timerMutex;
 extern sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
