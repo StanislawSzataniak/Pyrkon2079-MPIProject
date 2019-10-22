@@ -92,6 +92,7 @@ extern pthread_t ticketsThread;
 
 extern void *comFunc(void *);
 extern void *prepareAndSendTicketsDetails(void *);
+extern void updateRequests(packet_t *data, int type);
 extern void sendPacket(packet_t *, int, int);
 
 typedef void (*f_w)(packet_t*);

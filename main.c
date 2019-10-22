@@ -4,6 +4,7 @@
 
 ticket_t pyrkonTicket;
 ticket_t workshops[3];
+int idx;
 
 void endPyrkonHandler(packet_t *packet);
 void wantToBeHostHandler(packet_t *pakiet);
@@ -57,20 +58,16 @@ int max(int a, int b) {
 
 void canIBeHost() {
     bool host = true;
-    int i;
-    request_t *req;
-    for (i = 0; i < VECTOR_TOTAL(hosts); i++) {
-        //printf("i: %d\n", i);
-        req = vector_get(&hosts, i);
-        int ts = req->ts;
-        int src = req->src;
-        //printf("%d %d\n", src, rank);
-        if (src < hostRequest.src) {
+    for (idx = 0; idx < VECTOR_TOTAL(hosts); idx++) {
+        request_t *req = (request_t *)malloc(sizeof(request_t));
+        memcpy(req, vector_get(&hosts, idx), sizeof(request_t));
+        printf("%d %d %d %d\n", req->ts, hostRequest.ts, req->src, rank);
+        if (req->ts < hostRequest.ts || (req->ts == hostRequest.ts && req->src < hostRequest.src)) {
             host = false;
+            break;
         }
     }
     if (host) isHost = true;
-    if (!host) isHost = false;
 }
 
 void finishHandler(packet_t *pakiet)
@@ -82,12 +79,10 @@ void finishHandler(packet_t *pakiet)
 void *comFunc(void *ptr) {
     MPI_Status status;
     packet_t packet;;
-    int flaga=0;
 
     while (!end) {
         MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         
-
         pthread_mutex_lock(&timerMutex);
             lamportTimer = max(lamportTimer, packet.ts) + 1;
             // println("%d -> %s", status.MPI_SOURCE, getMessageCode(status.MPI_TAG).c_str());
@@ -172,10 +167,7 @@ int main(int argc, char **argv) {
         //printf("%s %d %s", "SendPacket", rank, "\n");
         sendToEveryoneBut(&packet, WANT_TO_BE_HOST, rank);
     }*/
-    becomeHost();
-    request_t *request0 = vector_get(&hosts, 0);
-    request_t *request1 = vector_get(&hosts, 1);
-    printf("%d %d %d\n", VECTOR_TOTAL(hosts), request0->src, request1->src);
+    becomeHost(); 
     finalize();
     return 0;
 }
@@ -185,11 +177,10 @@ void endPyrkonHandler(packet_t *packet){
     end = TRUE; 
 }
 void wantToBeHostHandler(packet_t *packet){
-    request_t hRequest;
-    hRequest.ts = packet->ts;
-    hRequest.src = packet->src;
-    vector_add(&hosts, &hRequest);
-    //printf("%d %d %d\n", hRequest.ts, hRequest.src, rank);
+    request_t *req = (request_t *)malloc(sizeof(request_t));
+    req->ts = packet->ts;
+    req->src = packet->src;
+    vector_add(&hosts, req);
     
     if (VECTOR_TOTAL(hosts) == size-1) {
         canIBeHost();
@@ -198,7 +189,6 @@ void wantToBeHostHandler(packet_t *packet){
         } else {
             printf("%s%d\n", "I am not the host", rank);
         }
-        //VECTOR_FREE(hosts);
         sem_post(&pyrkonHostSem);
     }
 }
@@ -233,6 +223,10 @@ void wantWorkshopTicketAckHandler(packet_t *packet){
 
 void sendToEveryoneBut(packet_t *packet, int message, int sender) {
     int dst;
+    pthread_mutex_lock(&timerMutex);
+        packet->ts = ++lamportTimer;
+        updateRequests(packet, message);
+    pthread_mutex_unlock(&timerMutex);
     for (dst = 0; dst < size; dst++) {
         if (dst != sender) {
             sendPacket(packet, dst, message);

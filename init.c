@@ -26,11 +26,10 @@ void updateRequests(packet_t *data, int type) {
 
 void sendPacket(packet_t *data, int dst, int type) {
 
-    pthread_mutex_lock(&timerMutex);
-        data->ts = ++lamportTimer;
-    pthread_mutex_unlock(&timerMutex);
     
-    updateRequests(data, type);
+    
+    //updateRequests(data, type);
+
 
     // data->pyrkonNumber = pyrkonNumber;
     packet_t *newP = (packet_t *)malloc(sizeof(packet_t));
