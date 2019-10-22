@@ -1,33 +1,42 @@
 #ifndef MAINH
 #define MAINH
 
+#define TRUE 1
+#define FALSE 0
+
 #define FIELDNO 8
-#define PYRKON_START 1
-#define PYRKON_TICKET 2
-#define WORKSHOP_TICKET 3
-#define PYRKON_TICKET_ACK 4
-#define WORKSHOP_TCIKET_ACK 5
-#define PYRKON_ENTER 6
-#define WORKSHOP_ENTER 7
-#define MIN_WORKSHOPS 3
-#define MAX_WORKSHOPS 8
-#define MAX_HANDLERS 10
-#define FINISH 11
-#define WORKSHOP_END 12
+
+#define WANT_TO_BE_HOST 1
+#define PYRKON_START 2
+#define PYRKON_NUMBER_INCREMENTED 3
+#define PYRKON_TICKETS 4
+#define WORKSHOPS_TICKETS 5
+#define GOT_TICKETS_INFO 6
+#define WANT_PYRKON_TICKET 7
+#define WANT_PYRKON_TICKET_ACK 8
+#define WANT_WORKSHOP_TICKET 9
+#define WANT_WORKSHOP_TICKET_ACK 10
+#define PYRKON_END 11
+
+#define MAX_HANDLERS 12
+
 #define VECTOR_INITIAL_CAPACITY 16
 #define PYRKON_TICKET_NUMBER 10
 
 #define NUMBER_OF_WORKSHOP_TICKETS 2
 #define WORKSHOP_NUMBER 3
+#define MIN_WORKSHOPS 3
+#define MAX_WORKSHOPS 8
 
-#include<mpi.h>
-#include<pthread.h>
-#include<stdio.h>
+#include <mpi.h>
+#include <pthread.h>
+#include <stdio.h>
 #include <stdbool.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<string.h>
-#include<semaphore.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <semaphore.h>
+#include "vector.h"
 
 extern MPI_Datatype MPI_PACKET_T;
 
@@ -37,7 +46,12 @@ typedef struct {
     int confs;              /* liczba zgód na zajęcie biletu */
     int number;             /* liczba dostępnych biletów na pyrkon */
     int requestTS;
-} ticket;
+} ticket_t;
+
+typedef struct {
+    int ts;
+    int src;
+} request_t;
 
 typedef struct {
     int ts;                 /* zegar lamporta */
@@ -64,12 +78,15 @@ extern int wkspNumber;
 extern int wkspTicketsNumber;
 extern int lamportTimer;
 extern int pyrkonNumber;
+extern bool isHost;
 
-extern bool end;
+extern volatile char end;
+extern vector hosts;
+extern request_t hostRequest;
 
 
 extern pthread_mutex_t timerMutex;
-extern sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+extern sem_t pyrkonHostSem, pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 extern pthread_t ticketsThread;
 
@@ -78,9 +95,6 @@ extern void *prepareAndSendTicketsDetails(void *);
 extern void sendPacket(packet_t *, int, int);
 
 typedef void (*f_w)(packet_t*);
-// TODO
-// f_w handlers[MAX_HANDLERS] = {
 
-// }
 
 #endif

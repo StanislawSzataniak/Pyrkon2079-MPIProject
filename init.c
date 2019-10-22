@@ -1,24 +1,36 @@
 #include "main.h"
-#include "vector.h"
 
 int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber;
+bool isHost;
 
 int *tickets_agreements_array;
 int **workshops_agreements_array;
 
 vector queue;
+vector hosts;
+request_t hostRequest;
+pthread_t threadDelay;
 
 pthread_mutex_t timerMutex;
 pthread_mutex_t packetMut = PTHREAD_MUTEX_INITIALIZER;
-sem_t pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+sem_t pyrkonHostSem, pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 pthread_t ticketsThread, communicationThread;
+
+void updateRequests(packet_t *data, int type) {
+    if (type == WANT_TO_BE_HOST) {
+        hostRequest.ts = data->ts;
+        hostRequest.src = data->src;
+    }
+}
 
 void sendPacket(packet_t *data, int dst, int type) {
 
     pthread_mutex_lock(&timerMutex);
         data->ts = ++lamportTimer;
     pthread_mutex_unlock(&timerMutex);
+    
+    updateRequests(data, type);
 
     // data->pyrkonNumber = pyrkonNumber;
     packet_t *newP = (packet_t *)malloc(sizeof(packet_t));
@@ -31,13 +43,11 @@ void sendPacket(packet_t *data, int dst, int type) {
 
 }
 
-void delayFunc(void *ptr) {
+void *delayFunc(void *ptr) {
     while (!end) {
         int percent = (rand()%5 + 1);
-        if (!rank) percent = 0;
         struct timespec t = { 0, percent*25000000 };
         struct timespec rem = { 1, 0 };
-        if (rank)
 	    nanosleep(&t,&rem);
         pthread_mutex_lock( &packetMut );
         queueEl_t *queueEl = vector_get(&queue, 0);
@@ -49,7 +59,7 @@ void delayFunc(void *ptr) {
             free(queueEl);
         }
     }
-    
+    return 0;
 }
 
 void initialize(int *argc, char ***argv) {
@@ -77,30 +87,39 @@ void initialize(int *argc, char ***argv) {
 
     // initialize stuff
     lamportTimer = 0;
-    pyrkonNumber = 0; 
+    pyrkonNumber = 0;
+    isHost = false;
+    srand(rank+time(NULL));
 
     // initialize semaphores
+    sem_init(&pyrkonHostSem, 0, 0);
     sem_init(&pyrkonStartSem, 0, 0);
     sem_init(&everyoneGetsTicketsInfoSem, 0, 0);
     sem_init(&pyrkonTicketSem, 0, 0);
     sem_init(&workshopTicketSem, 0, 0);
     vector_init(&queue);
+    vector_init(&hosts);
 
     //init handlers
     
-    printf("COMM THREAD\n");
+    printf("COMM THREAD %d\n", rank);
     // init communication thread
     pthread_create(&communicationThread, NULL, comFunc, 0);
+    pthread_create(&threadDelay, NULL, delayFunc, 0);
 }
 
 void finalize(void){
     pthread_mutex_destroy(&timerMutex);
     pthread_join(communicationThread, NULL);
+    pthread_join(threadDelay, NULL);
     // pthread_join(ticketsThread, NULL);
+    sem_destroy(&pyrkonHostSem);
     sem_destroy(&pyrkonStartSem);
     sem_destroy(&pyrkonTicketSem);
     sem_destroy(&everyoneGetsTicketsInfoSem);
     sem_destroy(&workshopTicketSem);
+    VECTOR_FREE(queue);
+    VECTOR_FREE(hosts);
     MPI_Type_free(&MPI_PACKET_T);
     MPI_Finalize();
 }
