@@ -78,6 +78,7 @@ extern int wkspNumber;
 extern int wkspTicketsNumber;
 extern int lamportTimer;
 extern int pyrkonNumber;
+extern int incrementedAck;
 extern bool isHost;
 
 extern volatile char end;

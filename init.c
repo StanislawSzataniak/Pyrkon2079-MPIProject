@@ -1,6 +1,6 @@
 #include "main.h"
 
-int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber;
+int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber, incrementedAck;
 bool isHost;
 
 int *tickets_agreements_array;
@@ -44,10 +44,11 @@ void sendPacket(packet_t *data, int dst, int type) {
 
 void *delayFunc(void *ptr) {
     while (!end) {
-        int percent = (rand()%5 + 1);
-        struct timespec t = { 0, percent*25000000 };
-        struct timespec rem = { 1, 0 };
-	    nanosleep(&t,&rem);
+        int percent = (rand()%500 + 1);
+        //struct timespec t = { 0, percent*25000000 };
+        //struct timespec rem = { 1, 0 };
+	    //nanosleep(&t,&rem);
+        usleep(percent);
         pthread_mutex_lock( &packetMut );
         queueEl_t *queueEl = vector_get(&queue, 0);
         VECTOR_DELETE(queue, 0);
@@ -87,6 +88,7 @@ void initialize(int *argc, char ***argv) {
     // initialize stuff
     lamportTimer = 0;
     pyrkonNumber = 0;
+    incrementedAck = 0;
     isHost = false;
     srand(rank+time(NULL));
 

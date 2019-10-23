@@ -20,6 +20,11 @@ typedef struct {
     int dst;
 } queueEl_t;
 
+typedef struct {
+    int ts;
+    int src;
+} request_t;
+
 int main(void)
 {
     int i;

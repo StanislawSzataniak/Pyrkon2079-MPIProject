@@ -19,6 +19,7 @@ void wantWorkshopTicketHandler(packet_t *packet);
 void wantWorkshopTicketAckHandler(packet_t *packet);
 
 void sendToEveryoneBut(packet_t *packet, int message, int sender);
+void sendToEveryone(packet_t *packet, int message);
 
 void becomeHost();
 void startPyrkon();
@@ -62,7 +63,7 @@ void canIBeHost() {
     for (idx = 0; idx < VECTOR_TOTAL(hosts); idx++) {
         request_t *req = (request_t *)malloc(sizeof(request_t));
         memcpy(req, vector_get(&hosts, idx), sizeof(request_t));
-        printf("%d %d %d %d\n", req->ts, hostRequest.ts, req->src, rank);
+        //printf("%d %d %d %d\n", req->ts, hostRequest.ts, req->src, rank);
         if (req->ts < hostRequest.ts || (req->ts == hostRequest.ts && req->src < hostRequest.src)) {
             host = false;
             break;
@@ -79,7 +80,7 @@ void finishHandler(packet_t *pakiet)
 
 void *comFunc(void *ptr) {
     MPI_Status status;
-    packet_t packet;;
+    packet_t packet;
 
     while (!end) {
         MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
@@ -91,7 +92,6 @@ void *comFunc(void *ptr) {
 
         packet.src = status.MPI_SOURCE;
         
-
         if (packet.pyrkonNumber == pyrkonNumber) {        //protection from receiving messages from previous Pyrkon
             handlers[(int)status.MPI_TAG](&packet);
         }
@@ -100,74 +100,8 @@ void *comFunc(void *ptr) {
 }
 
 
-
-/*
-
-void pyrkonTicketRequestHandler(packet_t *packet)
-{
-    int senderId = packet->src;
-    if (pyrkonTicket.want)
-    {
-        if (!pyrkonTicket.has && (pyrkonTicket.requestTS > packet->ts || (pyrkonTicket.requestTS == packet->ts && rank > senderId))) {
-            sendPacket(packet, packet -> dst, PYRKON_TICKET_ACK);
-	}
-    }
-    else {
-        sendPacket(packet, packet -> dst, PYRKON_TICKET_ACK);
-    }
-}
-
-void pyrkonResponseHandler(packet_t *packet) {
-	pyrkonTicket.want = true;
-	pyrkonTicket.confs++;
-	if(pyrkonTicket.confs == size ) {
-		sendPacket(packet, packet -> dst, PYRKON_ENTER);
-	}
-}
-
-void freePyrkonTicket(packet_t *packet) {
-	pyrkonTicket.confs = 0;
-	sendPacket(packet, packet -> dst, FINISH);
-}
-
-void workshopRequestHandler(packet_t *packet)
-{
-    int senderId = packet->src;
-    if (workshops[packet -> wkspNumber].want)
-    {
-        if (!workshops[packet -> wkspNumber].has && (workshops[packet -> wkspNumber].requestTS > packet->ts || (workshops[packet -> wkspNumber].requestTS == packet->ts && rank > senderId))) {
-            sendPacket(packet, packet -> dst, PYRKON_TICKET_ACK);
-	}
-    }
-    else {
-        sendPacket(packet, packet -> dst, PYRKON_TICKET_ACK);
-    }
-}
-
-void workshopResponseHandler(packet_t* packet) {
-	workshops[packet -> wkspNumber].confs++;
-	if(workshops[packet -> wkspNumber].confs == size ) {
-		sendPacket(packet, packet -> dst, WORKSHOP_TCIKET_ACK);
-	}	
-}
-
-void freeWorkshop(packet_t *packet) {
-	workshops[packet -> wkspNumber].want = false;
-	workshops[packet -> wkspNumber].has = false;
-	workshops[packet -> wkspNumber].confs = 0;
-	sendPacket(packet, packet -> dst, WORKSHOP_END );
-}
-*/
-
 int main(int argc, char **argv) {
     initialize(&argc, &argv);
-    /*packet_t packet;
-    packet.ts = 1;
-    packet.pyrkonNumber = 0;
-    while (!end) {
-        //printf("%s %d %s", "SendPacket", rank, "\n");
-        sendToEveryoneBut(&packet, WANT_TO_BE_HOST, rank);
-    }*/
     becomeHost();
     startPyrkon();
     finalize();
@@ -187,19 +121,28 @@ void wantToBeHostHandler(packet_t *packet){
     if (VECTOR_TOTAL(hosts) == size-1) {
         canIBeHost();
         if (isHost) {
-            printf("%s%d\n", "I am the host", rank);
+            printf("%s %d\n", "I am the host", rank);
         } else {
-            printf("%s%d\n", "I am not the host", rank);
+            printf("%s %d\n", "I am not the host", rank);
         }
         sem_post(&pyrkonHostSem);
     }
 }
 void startPyrkonHandler(packet_t *packet) {
-	pyrkonNumber++;
+    packet->pyrkonNumber = ++pyrkonNumber;
+    pthread_mutex_lock(&timerMutex);
+    packet->ts = ++lamportTimer;
+    updateRequests(packet, PYRKON_NUMBER_INCREMENTED);
+    pthread_mutex_unlock(&timerMutex);
+    sendPacket(packet, packet->src, PYRKON_NUMBER_INCREMENTED);
 	sem_post(&pyrkonStartSem);
 }
-void pyrkonNumberIncremented(packet_t *packet) {	
-    sem_post(&pyrkonIncrementedSem);
+void pyrkonNumberIncremented(packet_t *packet) {
+    incrementedAck++;
+    if (incrementedAck == size - 1) {
+        sem_post(&pyrkonIncrementedSem);
+        printf("%s\n", "Incremented");
+    }
 }
 void workshopsTicketsHandler(packet_t *packet) {
     
@@ -227,13 +170,24 @@ void wantWorkshopTicketAckHandler(packet_t *packet){
 void sendToEveryoneBut(packet_t *packet, int message, int sender) {
     int dst;
     pthread_mutex_lock(&timerMutex);
-        packet->ts = ++lamportTimer;
-        updateRequests(packet, message);
+    packet->ts = ++lamportTimer;
+    updateRequests(packet, message);
     pthread_mutex_unlock(&timerMutex);
     for (dst = 0; dst < size; dst++) {
         if (dst != sender) {
             sendPacket(packet, dst, message);
         }
+    }
+}
+
+void sendToEveryone(packet_t *packet, int message) {
+    int dst;
+    pthread_mutex_lock(&timerMutex);
+    packet->ts = ++lamportTimer;
+    updateRequests(packet, message);
+    pthread_mutex_unlock(&timerMutex);
+    for (dst = 0; dst < size; dst++) {
+        sendPacket(packet, dst, message);
     }
 }
 
@@ -251,14 +205,11 @@ void startPyrkon() {
    	packet.pyrkonNumber = pyrkonNumber;
 	if(isHost) {
 		sendToEveryoneBut(&packet, PYRKON_START, rank);
+        pyrkonNumber++;
+        sem_wait(&pyrkonIncrementedSem);
 	}
 	else {
 		sem_wait(&pyrkonStartSem);
 	}
 	printf("New Pyrkon - %d\n", pyrkonNumber);
-	if(isHost) {
-		sendToEveryoneBut(&packet, PYRKON_NUMBER_INCREMENTED, rank);
-		printf("Inkremented\n");	
-		sem_wait(&pyrkonIncrementedSem);
-	}
 }
