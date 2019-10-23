@@ -8,7 +8,10 @@ int **workshops_agreements_array;
 
 vector queue;
 vector hosts;
+vector pTicketQueue;
 request_t hostRequest;
+request_t pTicketRequest;
+request_t wTicketRequest;
 pthread_t threadDelay;
 
 pthread_mutex_t timerMutex;
@@ -21,6 +24,9 @@ void updateRequests(packet_t *data, int type) {
     if (type == WANT_TO_BE_HOST) {
         hostRequest.ts = data->ts;
         hostRequest.src = data->src;
+    } else if (type == WANT_PYRKON_TICKET) {
+        pTicketRequest.ts = data->ts;
+        pTicketRequest.src = data->src;
     }
 }
 
@@ -92,6 +98,8 @@ void initialize(int *argc, char ***argv) {
     gotTicketInfoAck = 0;
     isHost = false;
     hostRequest.ts = INT_MAX;
+    pTicketRequest.ts = INT_MAX;
+    wTicketRequest.ts = INT_MAX;
     srand(rank+time(NULL));
 
     // initialize semaphores
@@ -103,6 +111,7 @@ void initialize(int *argc, char ***argv) {
     sem_init(&workshopTicketSem, 0, 0);
     vector_init(&queue);
     vector_init(&hosts);
+    vector_init(&pTicketQueue);
 
     //init handlers
     
@@ -125,6 +134,7 @@ void finalize(void){
     sem_destroy(&workshopTicketSem);
     VECTOR_FREE(queue);
     VECTOR_FREE(hosts);
+    VECTOR_FREE(pTicketQueue);
     MPI_Type_free(&MPI_PACKET_T);
     MPI_Finalize();
 }

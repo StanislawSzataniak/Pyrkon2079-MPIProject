@@ -56,6 +56,7 @@ typedef struct {
 
 typedef struct {
     int ts;                 /* zegar lamporta */
+    int requestTS;          /* zegar lamporta przy pierwszej wiadomości */
     int ticketsNumber;      /* liczba biletów na obecny Pyrkon */
     int pyrkonNumber;       /* numer obecnego Pyrkonu */
     int wkspshopsNumber;    /* liczba warsztatów na obecnym Pyrkonie */
@@ -85,7 +86,10 @@ extern bool isHost;
 
 extern volatile char end;
 extern vector hosts;
+extern vector pTicketQueue;
 extern request_t hostRequest;
+extern request_t pTicketRequest;
+extern request_t wTicketRequest;
 
 
 extern pthread_mutex_t timerMutex;

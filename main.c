@@ -172,11 +172,20 @@ void gotTicketInfoHandler(packet_t *packet) {
 }
 void wantPyrkonTicketHandler(packet_t* packet) {
     if (pyrkonTicket.want) {
+        if (!pyrkonTicket.has && (packet->ts > pTicketRequest.ts || (packet->ts == pTicketRequest.ts && packet->src > pTicketRequest.src))) {
+            pthread_mutex_lock(&timerMutex);
+            packet->ts = ++lamportTimer;
+            updateRequests(packet, WANT_PYRKON_TICKET_ACK);
+            pthread_mutex_unlock(&timerMutex);
+            sendPacket(packet, packet->src, WANT_PYRKON_TICKET_ACK);
+        } else {
+            vector_add(&pTicketQueue, &packet->src);
+        }
         
     } else {
         pthread_mutex_lock(&timerMutex);
         packet->ts = ++lamportTimer;
-        updateRequests(packet, message);
+        updateRequests(packet, WANT_PYRKON_TICKET_ACK);
         pthread_mutex_unlock(&timerMutex);
         sendPacket(packet, packet->src, WANT_PYRKON_TICKET_ACK);
     }
