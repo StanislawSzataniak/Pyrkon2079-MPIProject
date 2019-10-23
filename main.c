@@ -21,6 +21,7 @@ void wantWorkshopTicketAckHandler(packet_t *packet);
 void sendToEveryoneBut(packet_t *packet, int message, int sender);
 
 void becomeHost();
+void startPyrkon();
 
 typedef void (*f_w)(packet_t *);
 /* Lista handlerów dla otrzymanych pakietów
@@ -167,7 +168,8 @@ int main(int argc, char **argv) {
         //printf("%s %d %s", "SendPacket", rank, "\n");
         sendToEveryoneBut(&packet, WANT_TO_BE_HOST, rank);
     }*/
-    becomeHost(); 
+    becomeHost();
+    startPyrkon();
     finalize();
     return 0;
 }
@@ -193,10 +195,11 @@ void wantToBeHostHandler(packet_t *packet){
     }
 }
 void startPyrkonHandler(packet_t *packet) {
-    
+	pyrkonNumber++;
+	sem_post(&pyrkonStartSem);
 }
-void pyrkonNumberIncremented(packet_t *packet) {
-    
+void pyrkonNumberIncremented(packet_t *packet) {	
+    sem_post(&pyrkonIncrementedSem);
 }
 void workshopsTicketsHandler(packet_t *packet) {
     
@@ -240,4 +243,22 @@ void becomeHost() {
    packet.pyrkonNumber = pyrkonNumber;
    sendToEveryoneBut(&packet, WANT_TO_BE_HOST, rank);
    sem_wait(&pyrkonHostSem);
+}
+
+void startPyrkon() {
+	packet_t packet;
+   	packet.src = rank;
+   	packet.pyrkonNumber = pyrkonNumber;
+	if(isHost) {
+		sendToEveryoneBut(&packet, PYRKON_START, rank);
+	}
+	else {
+		sem_wait(&pyrkonStartSem);
+	}
+	printf("New Pyrkon - %d\n", pyrkonNumber);
+	if(isHost) {
+		sendToEveryoneBut(&packet, PYRKON_NUMBER_INCREMENTED, rank);
+		printf("Inkremented\n");	
+		sem_wait(&pyrkonIncrementedSem);
+	}
 }

@@ -13,7 +13,7 @@ pthread_t threadDelay;
 
 pthread_mutex_t timerMutex;
 pthread_mutex_t packetMut = PTHREAD_MUTEX_INITIALIZER;
-sem_t pyrkonHostSem, pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 pthread_t ticketsThread, communicationThread;
 
@@ -93,6 +93,7 @@ void initialize(int *argc, char ***argv) {
     // initialize semaphores
     sem_init(&pyrkonHostSem, 0, 0);
     sem_init(&pyrkonStartSem, 0, 0);
+    sem_init(&pyrkonIncrementedSem, 0, 0);
     sem_init(&everyoneGetsTicketsInfoSem, 0, 0);
     sem_init(&pyrkonTicketSem, 0, 0);
     sem_init(&workshopTicketSem, 0, 0);
@@ -113,7 +114,8 @@ void finalize(void){
     pthread_join(threadDelay, NULL);
     // pthread_join(ticketsThread, NULL);
     sem_destroy(&pyrkonHostSem);
-    sem_destroy(&pyrkonStartSem);
+    sem_destroy(&pyrkonStartSem); 
+    sem_destroy(&pyrkonIncrementedSem);
     sem_destroy(&pyrkonTicketSem);
     sem_destroy(&everyoneGetsTicketsInfoSem);
     sem_destroy(&workshopTicketSem);

@@ -86,7 +86,7 @@ extern request_t hostRequest;
 
 
 extern pthread_mutex_t timerMutex;
-extern sem_t pyrkonHostSem, pyrkonStartSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+extern sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 extern pthread_t ticketsThread;
 
