@@ -27,10 +27,7 @@ void becomeHost();
 void startPyrkon();
 void getTicketsInfo();
 void getPyrkonTicket();
-<<<<<<< HEAD
 void getWorkshopTicket();
-=======
->>>>>>> c60f3d0cb438edfd068a91f39edc0bfdf9b8d964
 void freePyrkonTicket();
 
 typedef void (*f_w)(packet_t *);
@@ -74,7 +71,7 @@ void canIBeHost() {
     for (idx = 0; idx < VECTOR_TOTAL(hosts); idx++) {
         request_t *req = (request_t *)malloc(sizeof(request_t));
         memcpy(req, vector_get(&hosts, idx), sizeof(request_t));
-        printf("%d %d %d %d\n", req->ts, hostRequest.ts, req->src, rank);
+        //printf("%d %d %d %d\n", req->ts, hostRequest.ts, req->src, rank);
         if (req->ts < hostRequest.ts || (req->ts == hostRequest.ts && req->src < hostRequest.src)) {
             host = false;
             break;
@@ -117,12 +114,8 @@ int main(int argc, char **argv) {
     startPyrkon();
     getTicketsInfo();
     getPyrkonTicket();
-<<<<<<< HEAD
     getWorkshopTicket();
-    //freePyrkonTicket();
-=======
     freePyrkonTicket();
->>>>>>> c60f3d0cb438edfd068a91f39edc0bfdf9b8d964
     finalize();
     return 0;
 }
@@ -178,13 +171,13 @@ void pyrkonTicketsHandler(packet_t *packet){
 void gotTicketInfoHandler(packet_t *packet) {
     gotTicketInfoAck++;
     if (gotTicketInfoAck == size - 1) {
-        printf("%s %d\n", "MAM INFO", rank);
+        printf("%s %d\n", "Dostałem informacje o biletach", rank);
         sem_post(&everyoneGotTicketInfoSem);
     }
 }
 void wantPyrkonTicketHandler(packet_t* packet) {
     printf("%s %d Moje ID: %d Liczba biletów: %d Czas jego: %d Czas mój: %d\n", "Dostałem żądanie od", packet->src, rank, pyrkonTicket.number, packet->ts, pTicketRequest.ts);
-    if (pyrkonTicket.want) {
+    /*if (pyrkonTicket.want) {
         if (!pyrkonTicket.has && (packet->ts < pTicketRequest.ts || (packet->ts == pTicketRequest.ts && packet->src < pTicketRequest.src))) {
             pthread_mutex_lock(&timerMutex);
             packet->ts = ++lamportTimer;
@@ -197,29 +190,49 @@ void wantPyrkonTicketHandler(packet_t* packet) {
             req->src = packet->src;
             //printf("WARTOŚĆ A: %d\n", req->src);
             vector_add(&pTicketQueue, req);
-        }*/
+        }
     } else {
         pthread_mutex_lock(&timerMutex);
         packet->ts = ++lamportTimer;
         updateRequests(packet, WANT_PYRKON_TICKET_ACK);
         pthread_mutex_unlock(&timerMutex);
         sendPacket(packet, packet->src, WANT_PYRKON_TICKET_ACK);
+    }*/
+    if (!pyrkonTicket.want) {
+        pthread_mutex_lock(&timerMutex);
+        packet->ts = ++lamportTimer;
+        updateRequests(packet, WANT_PYRKON_TICKET_ACK);
+        pthread_mutex_unlock(&timerMutex);
+        sendPacket(packet, packet->src, WANT_PYRKON_TICKET_ACK);
+    } else {
+        if (!pyrkonTicket.has && (packet->ts < pTicketRequest.ts || (packet->ts == pTicketRequest.ts && packet->src < pTicketRequest.src))) {
+            pthread_mutex_lock(&timerMutex);
+            packet->ts = ++lamportTimer;
+            updateRequests(packet, WANT_PYRKON_TICKET_ACK);
+            pthread_mutex_unlock(&timerMutex);
+            sendPacket(packet, packet->src, WANT_PYRKON_TICKET_ACK);
+        } else {
+            request_t *req = (request_t *)malloc(sizeof(request_t));
+            req->ts = packet->ts;
+            req->src = packet->src;
+            //printf("WARTOŚĆ A: %d\n", req->src);
+            vector_add(&pTicketQueue, req);
+        }
     }
 }
+
 void wantPyrkonTicketAckHandler(packet_t *packet) {
     if (pyrkonTicket.want && !pyrkonTicket.has) {
         pyrkonTicket.confs++;
-        printf("LICZBA BILETOW %d, RANK: %d, ACK: %d\n", pyrkonTicket.number, rank, pyrkonTicket.confs);
-        if (pyrkonTicket.number == 0)
-            printf("Czekam na bilety, %d\n", rank);
         pthread_mutex_lock(&ticketMutex);
-        if (pyrkonTicket.confs == size - pyrkonTicket.number && pyrkonTicket.number>0) {
+        printf("Liczba ack: %d, id: %d\n", pyrkonTicket.confs, rank);
+        if (pyrkonTicket.confs == size - pyrkonTicket.number) {
             pyrkonTicket.has = true;
             pyrkonTicket.confs = 0;
+            //pyrkonTicket.number--;
+            //sendToEveryoneBut(packet, PYRKON_ENTER, rank);
+            printf("Wszedłem, id: %d, czas: %d, globalny: %d\n", rank, pTicketRequest.ts, lamportTimer);
             pyrkonTicket.requestTS = INT_MAX;
-            pyrkonTicket.number--;
-            sendToEveryoneBut(packet, PYRKON_ENTER, rank);
-            printf("%s %d\n", "WSZEDŁEM", rank);
             sem_post(&pyrkonTicketSem);
         }
         pthread_mutex_unlock(&ticketMutex);
@@ -332,9 +345,8 @@ void getPyrkonTicket() {
     sem_wait(&pyrkonTicketSem);
 }
 
-<<<<<<< HEAD
 void getWorkshopTicket() {
-    int wantToAttendNumber = rand()%(wkspNumber - 1) + 1;
+    /*int wantToAttendNumber = rand()%(wkspNumber - 1) + 1;
     int i;
     for (i = 0; i < wkspNumber; i++) {
         ticket_t *wTicket = (ticket_t *)malloc(sizeof(ticket_t));
@@ -353,7 +365,7 @@ void getWorkshopTicket() {
         packet.packet.src = rank;
         packet.pyrkonNumber = pyrkonNumber;
         wantToAttendNumber--;
-    }
+    }*/
 }
 
 void freePyrkonTicket() {
@@ -361,35 +373,24 @@ void freePyrkonTicket() {
 	pyrkonTicket.has = false;
     pyrkonTicket.want = false;
     pyrkonTicket.visited = true;
-    pyrkonTicket.number++;
     pthread_mutex_unlock(&ticketMutex);
-    packet_t packet;
-    packet.src = rank;
-    packet.pyrkonNumber = pyrkonNumber;
-    sendToEveryoneBut(&packet, FREE_TICKET, rank);
-	/*while(vector_get(&pTicketQueue, 0)) {
+    //packet_t packet;
+    //packet.src = rank;
+    //packet.pyrkonNumber = pyrkonNumber;
+    //sendToEveryoneBut(&packet, FREE_TICKET, rank);
+	while(vector_get(&pTicketQueue, 0)) {
 		packet_t pakiet;
         pakiet.src = rank;
         pakiet.pyrkonNumber = pyrkonNumber;
+        pthread_mutex_lock(&timerMutex);
+        pakiet.ts = ++lamportTimer;
+        pthread_mutex_unlock(&timerMutex);
         request_t *req = (request_t *)malloc(sizeof(request_t));
         memcpy(req, vector_get(&pTicketQueue, 0), sizeof(request_t));
-        //printf("SENDER ID %d, MOJE ID: %d\n", req->src, rank);
-		sendPacket(&pakiet, req->src, FREE_TICKET);
+        printf("SENDER ID %d, MOJE ID: %d\n", req->src, rank);
+		sendPacket(&pakiet, req->src, WANT_PYRKON_TICKET_ACK);
 		vector_delete(&pTicketQueue, 0);
-	}*/
+	}
 	printf("%d zwalnia bilet\n", rank);
     sem_wait(&endPyrkonSem);
-=======
-void freePyrkonTicket() {
-	pyrkonTicket.want = false;
-	pyrkonTicket.has = false;
-	while(!&pTicketQueue.total > 0) {
-		packet_t pakiet;
-    		pakiet.src = rank;
-    		pakiet.pyrkonNumber = pyrkonNumber;
-		sendPacket(&pakiet, vector_get(&pTicketQueue, 0), WANT_PYRKON_TICKET_ACK);
-		vector_delete(&pTicketQueue, 0);
-		printf("%d zwalnia bilet\n", rank);
-	}
->>>>>>> c60f3d0cb438edfd068a91f39edc0bfdf9b8d964
 }
