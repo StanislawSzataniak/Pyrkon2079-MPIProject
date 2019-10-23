@@ -25,6 +25,7 @@ void becomeHost();
 void startPyrkon();
 void getTicketsInfo();
 void getPyrkonTicket();
+void freePyrkonTicket();
 
 typedef void (*f_w)(packet_t *);
 /* Lista handlerów dla otrzymanych pakietów
@@ -112,6 +113,7 @@ int main(int argc, char **argv) {
     startPyrkon();
     getTicketsInfo();
     getPyrkonTicket();
+    freePyrkonTicket();
     finalize();
     return 0;
 }
@@ -274,4 +276,17 @@ void getPyrkonTicket() {
     pyrkonTicket.want = true;
     sendToEveryoneBut(&packet, WANT_PYRKON_TICKET, rank);
     sem_wait(&pyrkonTicketSem);
+}
+
+void freePyrkonTicket() {
+	pyrkonTicket.want = false;
+	pyrkonTicket.has = false;
+	while(!&pTicketQueue.total > 0) {
+		packet_t pakiet;
+    		pakiet.src = rank;
+    		pakiet.pyrkonNumber = pyrkonNumber;
+		sendPacket(&pakiet, vector_get(&pTicketQueue, 0), WANT_PYRKON_TICKET_ACK);
+		vector_delete(&pTicketQueue, 0);
+		printf("%d zwalnia bilet\n", rank);
+	}
 }

@@ -37,7 +37,7 @@ int main(void)
 
     VECTOR_INIT(v);
 
-    VECTOR_ADD(v, queueEl);
+   /*VECTOR_ADD(v, queueEl);
     queueEl_t *xd = (queueEl_t *)malloc(sizeof(queueEl_t));
     xd = vector_get(&v, 0);
     VECTOR_DELETE(v, 0);
@@ -52,10 +52,12 @@ int main(void)
     VECTOR_DELETE(v, 1);
 
     VECTOR_SET(v, 0, "Hello");
-    VECTOR_ADD(v, "World");
+    VECTOR_ADD(v, "World");*/
+
+	VECTOR_ADD(v, 10);
 
     for (i = 0; i < VECTOR_TOTAL(v); i++)
-        printf("%s ", VECTOR_GET(v, char*, i));
+        printf("%d ", VECTOR_GET(v, int*, i));
     printf("\n");
     VECTOR_FREE(v);
 }
