@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <semaphore.h>
+#include <limits.h>
 #include "vector.h"
 
 extern MPI_Datatype MPI_PACKET_T;
@@ -79,6 +80,7 @@ extern int wkspTicketsNumber;
 extern int lamportTimer;
 extern int pyrkonNumber;
 extern int incrementedAck;
+extern int gotTicketInfoAck;
 extern bool isHost;
 
 extern volatile char end;
@@ -87,7 +89,7 @@ extern request_t hostRequest;
 
 
 extern pthread_mutex_t timerMutex;
-extern sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+extern sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGotTicketInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 extern pthread_t ticketsThread;
 

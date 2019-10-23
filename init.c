@@ -1,6 +1,6 @@
 #include "main.h"
 
-int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber, incrementedAck;
+int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber, incrementedAck, gotTicketInfoAck;
 bool isHost;
 
 int *tickets_agreements_array;
@@ -13,7 +13,7 @@ pthread_t threadDelay;
 
 pthread_mutex_t timerMutex;
 pthread_mutex_t packetMut = PTHREAD_MUTEX_INITIALIZER;
-sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGetsTicketsInfoSem, pyrkonTicketSem, workshopTicketSem;
+sem_t pyrkonHostSem, pyrkonStartSem, pyrkonIncrementedSem, everyoneGotTicketInfoSem, pyrkonTicketSem, workshopTicketSem;
 //czy zamiana na pthread_cond_t
 pthread_t ticketsThread, communicationThread;
 
@@ -89,14 +89,16 @@ void initialize(int *argc, char ***argv) {
     lamportTimer = 0;
     pyrkonNumber = 0;
     incrementedAck = 0;
+    gotTicketInfoAck = 0;
     isHost = false;
+    hostRequest.ts = INT_MAX;
     srand(rank+time(NULL));
 
     // initialize semaphores
     sem_init(&pyrkonHostSem, 0, 0);
     sem_init(&pyrkonStartSem, 0, 0);
     sem_init(&pyrkonIncrementedSem, 0, 0);
-    sem_init(&everyoneGetsTicketsInfoSem, 0, 0);
+    sem_init(&everyoneGotTicketInfoSem, 0, 0);
     sem_init(&pyrkonTicketSem, 0, 0);
     sem_init(&workshopTicketSem, 0, 0);
     vector_init(&queue);
@@ -119,7 +121,7 @@ void finalize(void){
     sem_destroy(&pyrkonStartSem); 
     sem_destroy(&pyrkonIncrementedSem);
     sem_destroy(&pyrkonTicketSem);
-    sem_destroy(&everyoneGetsTicketsInfoSem);
+    sem_destroy(&everyoneGotTicketInfoSem);
     sem_destroy(&workshopTicketSem);
     VECTOR_FREE(queue);
     VECTOR_FREE(hosts);
