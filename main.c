@@ -109,21 +109,34 @@ void *comFunc(void *ptr) {
 
 int main(int argc, char **argv) {
     initialize(&argc, &argv);
-    becomeHost();
-    startPyrkon();
-    getTicketsInfo();
-    getPyrkonTicket();
-    getWorkshopTicket();
-    freePyrkonTicket();
+    int k;
+    for (k = 0; k < 2; k++) {
+        becomeHost();
+        startPyrkon();
+        getTicketsInfo();
+        getPyrkonTicket();
+        getWorkshopTicket();
+        freePyrkonTicket();
+        println("KONIEC\n");
+    }
     finalize();
     return 0;
 }
 
 void endPyrkonHandler(packet_t *packet){
     pyrkonExit++;
-    if (pyrkonExit == size - 1 && pyrkonTicket.visited) {
+    println("PYRKON EXIT %d %d\n", pyrkonExit, pyrkonTicket.visited)
+    if (pyrkonExit >= size && pyrkonTicket.visited) {
         println("OTRZYMAŁEM FINISH\n" );
-        end = TRUE;
+        lamportTimer = 0;
+        incrementedAck = 0;
+        gotTicketInfoAck = 0;
+        hostAck = 0;
+        pyrkonExit = 0;
+        int i;
+        for (i = 0; i < VECTOR_TOTAL(hosts); i++)
+            vector_delete(&hosts, i);
+        //end = TRUE;
         sem_post(&endPyrkonSem);
     }
     
@@ -378,6 +391,7 @@ void getTicketsInfo() {
         packet.ticketsNumber = pTickets;
         packet.wkspshopsNumber = wNumber;
         packet.wkspTicketsNumber = wTickets;
+        isHost = false;
         
         sendToEveryone(&packet, PYRKON_TICKETS);
     }
@@ -406,6 +420,7 @@ void getWorkshopTicket() {
         int wsNumber = rand()%wkspNumber;
         while (workshopTickets[wsNumber].visited)
             wsNumber = rand()%wkspNumber;
+        println("IDĘ TERAZ NA WARSZTAT %d\n", wsNumber);
         workshopTickets[wsNumber].want = true;
         workshopTickets[wsNumber].has = false;
         workshopTickets[wsNumber].workshopNumber = wsNumber;
@@ -418,7 +433,6 @@ void getWorkshopTicket() {
         println("JESTEM NA WARSZTACIE %d\n", wsNumber);
         usleep(500);
         freeWorkshopTicket(wsNumber);
-        wantToAttendNumber--;
         
     }
 }
@@ -473,6 +487,6 @@ void freePyrkonTicket() {
     packet_t packet;
     packet.src = rank;
     packet.pyrkonNumber = pyrkonNumber;
-    sendToEveryoneBut(&packet, PYRKON_END, rank);
+    sendToEveryone(&packet, PYRKON_END);
     sem_wait(&endPyrkonSem);
 }
