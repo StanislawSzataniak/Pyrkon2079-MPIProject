@@ -1,6 +1,6 @@
 #include "main.h"
 
-int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber, incrementedAck, gotTicketInfoAck;
+int rank, size, lamportTimer, wkspNumber, wkspTicketsNumber, ticketsNumber, pyrkonNumber, incrementedAck, gotTicketInfoAck, hostAck, pyrkonExit;
 bool isHost;
 
 int *tickets_agreements_array;
@@ -12,7 +12,7 @@ vector pTicketQueue;
 vector wTicketQueue;
 request_t hostRequest;
 request_t pTicketRequest;
-request_t wTicketRequest;
+request_t wTicketRequest[WORKSHOP_NUMBER];
 pthread_t threadDelay;
 
 pthread_mutex_t timerMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -30,6 +30,11 @@ void updateRequests(packet_t *data, int type) {
         if (pTicketRequest.ts == INT_MAX) {
             pTicketRequest.ts = data->ts;
             pTicketRequest.src = data->src;
+        }
+    } else if (type == WANT_WORKSHOP_TICKET) {
+        if (wTicketRequest[data->wkspNumber].ts == INT_MAX) {
+            wTicketRequest[data->wkspNumber].ts = data->ts;
+            wTicketRequest[data->wkspNumber].src = data->src;
         }
     }
 }
@@ -54,7 +59,7 @@ void sendPacket(packet_t *data, int dst, int type) {
 
 void *delayFunc(void *ptr) {
     while (!end) {
-        int percent = (rand()%500 + 1);
+        int percent = (rand()%500 + 200);
         //struct timespec t = { 0, percent*25000000 };
         //struct timespec rem = { 1, 0 };
 	    //nanosleep(&t,&rem);
@@ -100,10 +105,16 @@ void initialize(int *argc, char ***argv) {
     pyrkonNumber = 0;
     incrementedAck = 0;
     gotTicketInfoAck = 0;
+    hostAck = 0;
+    pyrkonExit = 0;
     isHost = false;
     hostRequest.ts = INT_MAX;
     pTicketRequest.ts = INT_MAX;
-    wTicketRequest.ts = INT_MAX;
+    int i;
+    for (int i = 0; i < WORKSHOP_NUMBER; i++) {
+        wTicketRequest[i].ts = INT_MAX;
+    }
+    
     srand(rank+time(NULL));
 
     // initialize semaphores
@@ -121,7 +132,7 @@ void initialize(int *argc, char ***argv) {
 
     //init handlers
     
-    printf("COMM THREAD %d\n", rank);
+    //printf("COMM THREAD %d\n", rank);
     // init communication thread
     pthread_create(&communicationThread, NULL, comFunc, 0);
     pthread_create(&threadDelay, NULL, delayFunc, 0);

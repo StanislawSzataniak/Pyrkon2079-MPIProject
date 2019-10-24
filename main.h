@@ -19,8 +19,9 @@
 #define PYRKON_END 11
 #define PYRKON_ENTER 12
 #define FREE_TICKET 13
+#define WANT_TO_BE_HOST_ACK 14
 
-#define MAX_HANDLERS 14
+#define MAX_HANDLERS 15
 
 #define VECTOR_INITIAL_CAPACITY 16
 #define PYRKON_TICKET_NUMBER 10
@@ -56,6 +57,7 @@ typedef struct {
 typedef struct {
     int ts;
     int src;
+    int wkspNumber;
 } request_t;
 
 typedef struct {
@@ -86,6 +88,8 @@ extern int lamportTimer;
 extern int pyrkonNumber;
 extern int incrementedAck;
 extern int gotTicketInfoAck;
+extern int hostAck;
+extern int pyrkonExit;
 extern bool isHost;
 
 extern volatile char end;
@@ -94,7 +98,7 @@ extern vector pTicketQueue;
 extern vector wTicketQueue;
 extern request_t hostRequest;
 extern request_t pTicketRequest;
-extern request_t wTicketRequest;
+extern request_t wTicketRequest[WORKSHOP_NUMBER];
 
 
 extern pthread_mutex_t timerMutex, ticketMutex;
@@ -108,6 +112,9 @@ extern void updateRequests(packet_t *data, int type);
 extern void sendPacket(packet_t *, int, int);
 
 typedef void (*f_w)(packet_t*);
+
+#define println(FORMAT, ...) printf("%c[%d;%dm [%d][%d][%d]: " FORMAT "%c[%d;%dm\n",  27, (1+(rank/7))%2, 31+(6+rank)%7, rank, lamportTimer, pyrkonNumber, ##__VA_ARGS__, 27,0,37);
+
 
 
 #endif
